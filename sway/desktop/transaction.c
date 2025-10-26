@@ -20,6 +20,9 @@
 #include "list.h"
 #include "log.h"
 #include "util.h"
+#include <scenefx/types/wlr_scene.h>
+#include <scenefx/types/fx/shadow.h>
+#include <scenefx/types/fx/corner_location.h>
 
 struct sway_transaction {
 	struct wl_event_source *timer;
@@ -954,7 +957,6 @@ static void arrange_container(struct sway_container *con,
 			}
 		}
 #endif
-
 		// Shadow management
 		if (container_has_shadow(con)) {
 			bool has_corner_radius = container_has_corner_radius(con);
@@ -1154,7 +1156,6 @@ static void arrange_output(struct sway_output *output, int width, int height) {
 
 			sway_scene_node_set_enabled(&output->layers.shell_background->node, !fs);
 			sway_scene_node_set_enabled(&output->layers.shell_bottom->node, !fs);
-			// Disable blur layer during fullscreen
 			wlr_scene_node_set_enabled(&output->layers.blur_layer->node, !fs);
 			sway_scene_node_set_enabled(&output->layers.fullscreen->node, fs);
 
@@ -1212,7 +1213,6 @@ static void arrange_root(struct sway_root *root) {
 
 	sway_scene_node_set_enabled(&root->layers.shell_background->node, !fs);
 	sway_scene_node_set_enabled(&root->layers.shell_bottom->node, !fs);
-	// Disable blur layer during fullscreen
 	wlr_scene_node_set_enabled(&root->layers.blur_tree->node, !fs);
 	sway_scene_node_set_enabled(&root->layers.tiling->node, !fs);
 	sway_scene_node_set_enabled(&root->layers.floating->node, !fs);
@@ -1244,6 +1244,9 @@ static void arrange_root(struct sway_root *root) {
 	if (fs) {
 		for (int i = 0; i < root->outputs->length; i++) {
 			struct sway_output *output = root->outputs->items[i];
+			if (!output->enabled || !output->wlr_output->enabled) {
+				continue;
+			}
 			struct sway_workspace *ws = output->current.active_workspace;
 
 			sway_scene_output_set_position(output->scene_output, output->lx, output->ly);
@@ -1265,6 +1268,9 @@ static void arrange_root(struct sway_root *root) {
 	} else {
 		for (int i = 0; i < root->outputs->length; i++) {
 			struct sway_output *output = root->outputs->items[i];
+			if (!output->enabled || !output->wlr_output->enabled) {
+				continue;
+			}
 
 			sway_scene_output_set_position(output->scene_output, output->lx, output->ly);
 
